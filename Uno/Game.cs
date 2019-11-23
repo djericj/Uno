@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using Crayon;
 
 namespace Uno
 {
@@ -74,6 +76,11 @@ namespace Uno
             EndTime = DateTime.Now;
             TimeSpan ts = EndTime.Subtract(StartTime);
             Console.WriteLine("Game end");
+            foreach (var player in Players)
+            {
+                Console.WriteLine($"Player {player.Number} had {player.Hand.Count()} cards remaining");
+            }
+
             Console.WriteLine($"Winner is Player {winner.Number}");
             Console.WriteLine($"Game took {ts} seconds");
         }
@@ -115,12 +122,14 @@ namespace Uno
                 }
                 if (next < 1) next = next + players;
             }
-            Console.WriteLine($"Next player is player {next}");
-            return Players.Where(x => x.Number == next).FirstOrDefault();
+
+            var nextPlayer = Players.Where(x => x.Number == next).FirstOrDefault();
+            qreturn nextPlayer;
         }
 
         public void ExecuteRound(Player player, int round)
         {
+            var index = 0;
             Console.WriteLine("");
             Console.WriteLine("************************************");
             Console.WriteLine($"Starting Round {round}");
@@ -132,7 +141,9 @@ namespace Uno
             }
             else
             {
+                index++;
                 player = TakeTurn(player);
+
                 if (player.Hand.Count() == 0)
                 {
                     End(player);
@@ -141,10 +152,21 @@ namespace Uno
                 {
                     while (player.Number > 1)
                     {
+                        index++;
                         player = TakeTurn(player);
+
+                        if (player.Hand.Count() == 0)
+                        {
+                            End(player);
+                            break;
+                        }
                     }
-                    Console.WriteLine($"Round {Round} End");
-                    round++;
+                    if (index == 3)
+                    {
+                        Console.WriteLine($"Round {Round} End");
+                        index = 0;
+                        round++;
+                    }
                     ExecuteRound(player, round);
                 }
             }
@@ -152,37 +174,55 @@ namespace Uno
 
         private Player TakeTurn(Player player)
         {
+            Console.WriteLine("");
+            Console.WriteLine($"Player {player.Number} turn:");
             var card = PlayCard(player);
             Console.WriteLine($"Player {player.Number} has {player.Hand.Count()} cards remaining.");
+            if (player.Hand.Count == 1)
+                Console.WriteLine($"Player {player.Number} has UNO!!!!!!!!".Reversed());
             Player nextPlayer = null;
-            if (card.IsReverseCard)
+            if (card == null)
             {
-                GoForward = !GoForward;
+                Console.WriteLine($"Player {player.Number} has NO matches.  Draw 1 card.");
+                player = DrawCard(player, 1);
                 nextPlayer = GetNextPlayer(player.Number);
-            }
-            else if (card.IsSkipCard)
-            {
-                nextPlayer = GetNextPlayer(player.Number, true);
-            }
-            else if (card.IsDrawTwoCard)
-            {
-                player = GetNextPlayer(player.Number);
-                player = DrawCard(player, 2);
-                nextPlayer = player;
-            }
-            else if (card.IsWildCard)
-            {
-                nextPlayer = GetNextPlayer(player.Number);
-            }
-            else if (card.IsWildDrawFourCard)
-            {
-                player = GetNextPlayer(player.Number);
-                player = DrawCard(player, 4);
-                nextPlayer = player;
             }
             else
             {
-                nextPlayer = GetNextPlayer(player.Number);
+                if (card.IsReverseCard)
+                {
+                    GoForward = !GoForward;
+                    nextPlayer = GetNextPlayer(player.Number);
+                }
+                else if (card.IsSkipCard)
+                {
+                    nextPlayer = GetNextPlayer(player.Number, true);
+                }
+                else if (card.IsDrawTwoCard)
+                {
+                    player = GetNextPlayer(player.Number);
+
+                    Console.WriteLine("");
+                    Console.WriteLine($"Player {player.Number} turn:");
+                    player = DrawCard(player, 2);
+                    Console.WriteLine($"Player {player.Number} has {player.Hand.Count()} cards remaining.");
+                    player = GetNextPlayer(player.Number);
+                    nextPlayer = player;
+                }
+                else if (card.IsWildCard)
+                {
+                    nextPlayer = GetNextPlayer(player.Number);
+                }
+                else if (card.IsWildDrawFourCard)
+                {
+                    player = GetNextPlayer(player.Number);
+                    player = DrawCard(player, 4);
+                    nextPlayer = player;
+                }
+                else
+                {
+                    nextPlayer = GetNextPlayer(player.Number);
+                }
             }
             return nextPlayer;
         }
@@ -193,7 +233,16 @@ namespace Uno
             {
                 player.Hand.Add(GameDeck.Dequeue());
             }
+            Console.WriteLine($"Player {player.Number} draws {cards} cards.");
+            Console.WriteLine($"Player {player.Number} has {player.Hand.Count()} cards remaining.");
             return player;
+        }
+
+        private void SetFaceCard(Card card)
+        {
+            FaceCard = card;
+            Console.WriteLine($"FaceCard is {FaceCard.DisplayCard()}");
+            Discard.Enqueue(card);
         }
 
         private Card MatchOnColor(Player player)
@@ -210,16 +259,9 @@ namespace Uno
             }
         }
 
-        private void SetFaceCard(Card card)
-        {
-            FaceCard = card;
-            Console.WriteLine($"FaceCard is {FaceCard.DisplayCard()}");
-            Discard.Enqueue(card);
-        }
-
         private Card MatchOnNumber(Player player)
         {
-            var numberCard = player.Hand.Where(x => x.Number > 0).FirstOrDefault();
+            var numberCard = player.Hand.Where(x => x.Number == FaceCard.Number).FirstOrDefault();
             if (numberCard != null)
             {
                 Console.WriteLine($"Player {player.Number} matched NUMBER {numberCard.DisplayCard()} with FaceCard {FaceCard.DisplayCard()} ");
@@ -285,11 +327,7 @@ namespace Uno
             {
                 card = PlaySpecialCard(player);
             }
-            if (card == null)
-            {
-                DrawCard(player, 1);
-            }
-            else
+            if (card != null)
             {
                 SetFaceCard(card);
                 player.Hand.Remove(card);
@@ -301,24 +339,10 @@ namespace Uno
         public GameResult NewGame()
         {
             Game game = new Game(Players);
-            GameDeck = new Queue<Card>(Deck.BuildDeck());
+            GameDeck = new Queue<Card>(Shuffle(Deck.BuildDeck()));
             game.Start();
 
             return new GameResult();
         }
-    }
-
-    public enum GameStatus
-    {
-        Unknown = -1,
-        Running = 1,
-        Stopped = 2
-    }
-
-    public enum Direction
-    {
-        Unknown = -1,
-        Forward = 1,
-        Backward = 2
     }
 }
