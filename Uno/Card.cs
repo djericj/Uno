@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Crayon;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -32,69 +33,42 @@ namespace Uno
 
     public static class CardExtensions
     {
-        public static void DisplayCard(this Card card)
+        private static string SetColor(Card card)
         {
-            if (card.Number > 0)
+            if (card.Color == "Red") return "Red".BrightRed().Reversed();
+            if (card.Color == "Yellow") return "Yellow".Yellow().Reversed();
+            if (card.Color == "Green") return "Green".BrightGreen().Reversed();
+            if (card.Color == "Blue") return "Blue".BrightBlue().Reversed();
+            return "Black".BrightBlack();
+        }
+
+        public static string DisplayCard(this Card card)
+        {
+            if (card.Number > -1)
             {
-                SetColor(card.Color);
-                Console.Write($"{card.Color} {card.Number}");
-                Console.ResetColor();
+                return $"{SetColor(card)} {card.Number}";
             }
             else if (card.IsDrawTwoCard)
             {
-                SetColor(card.Color);
-                Console.Write($"{card.Color} Draw Two");
-                Console.ResetColor();
+                return $"{SetColor(card)} Draw Two";
             }
             else if (card.IsReverseCard)
             {
-                SetColor(card.Color);
-                Console.Write($"{card.Color} Reverse");
-                Console.ResetColor();
+                return $"{SetColor(card)} Reverse";
             }
             else if (card.IsSkipCard)
             {
-                SetColor(card.Color);
-                Console.Write($"{card.Color} Skip");
-                Console.ResetColor();
+                return $"{SetColor(card)} Skip";
             }
             else if (card.IsWildCard)
             {
-                SetColor("Black");
-                Console.Write($"Wild Card");
-                Console.ResetColor();
+                return $"{SetColor(card)} Wild Card";
             }
             else if (card.IsWildDrawFourCard)
             {
-                SetColor("Black");
-                Console.Write($"Wild Card Draw Four");
-                Console.ResetColor();
+                return $"{SetColor(card)} Wild Card Draw Four";
             }
-        }
-
-        private static void SetColor(string color)
-        {
-            Console.ForegroundColor = ConsoleColor.White;
-            if (color == "Red")
-            {
-                Console.BackgroundColor = ConsoleColor.Red;
-            }
-            else if (color == "Yellow")
-            {
-                Console.BackgroundColor = ConsoleColor.DarkYellow;
-            }
-            else if (color == "Blue")
-            {
-                Console.BackgroundColor = ConsoleColor.Blue;
-            }
-            else if (color == "Green")
-            {
-                Console.BackgroundColor = ConsoleColor.DarkGreen;
-            }
-            else if (color == "Black")
-            {
-                Console.BackgroundColor = ConsoleColor.Black;
-            }
+            return "";
         }
     }
 

@@ -37,14 +37,14 @@ namespace Uno
 
         private static Card CreateNumberCard(string color, int number) => new Card() { Color = color, Number = number };
 
-        private static Card CreateDrawTwoCard(string color) => new Card() { Color = color, IsDrawTwoCard = true };
+        private static Card CreateDrawTwoCard(string color) => new Card() { Color = color, Number = -1, IsDrawTwoCard = true };
 
-        private static Card CreateReverseCard(string color) => new Card() { Color = color, IsReverseCard = true };
+        private static Card CreateReverseCard(string color) => new Card() { Color = color, Number = -1, IsReverseCard = true };
 
-        private static Card CreateSkipCard(string color) => new Card() { Color = color, IsSkipCard = true };
+        private static Card CreateSkipCard(string color) => new Card() { Color = color, Number = -1, IsSkipCard = true };
 
-        private static Card CreateWildCard() => new Card() { Color = "Black", IsWildCard = true };
+        private static Card CreateWildCard() => new Card() { Color = "Black", Number = -1, IsWildCard = true };
 
-        private static Card CreateWildDrawFourCard() => new Card() { Color = "Black", IsWildDrawFourCard = true };
+        private static Card CreateWildDrawFourCard() => new Card() { Color = "Black", Number = -1, IsWildDrawFourCard = true };
     }
 }

@@ -6,4 +6,8 @@
     <StartupObject>Uno.Program</StartupObject>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Crayon" Version="1.2.45" />
+  </ItemGroup>
+
 </Project>

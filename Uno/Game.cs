@@ -11,6 +11,10 @@ namespace Uno
             Players = players;
         }
 
+        public DateTime StartTime { get; set; }
+
+        public DateTime EndTime { get; set; }
+
         public static List<Player> Players { get; set; }
 
         public static Queue<Card> GameDeck { get; set; }
@@ -19,11 +23,7 @@ namespace Uno
 
         public static Card FaceCard { get; set; }
 
-        public GameStatus Status { get; set; }
-
         public bool GoForward { get; set; }
-
-        public static Player Winner { get; set; }
 
         public static int Round { get; set; }
 
@@ -46,16 +46,13 @@ namespace Uno
 
         public void Start()
         {
+            StartTime = DateTime.Now;
             Console.WriteLine("Game start");
-            Status = GameStatus.Running;
+            Reset();
             GoForward = true;
-            Winner = null;
+            Discard = new Queue<Card>();
             Deal();
-            FaceCard = GameDeck.Dequeue();
-            Discard = new Queue<Card>(new List<Card>() { FaceCard });
-            Console.Write($"FaceCard is ");
-            FaceCard.DisplayCard();
-            Console.WriteLine();
+            SetFaceCard(GameDeck.Dequeue());
             Round = 1;
             ExecuteRound(Players[0], Round);
         }
@@ -72,12 +69,13 @@ namespace Uno
             }
         }
 
-        public void End()
+        public void End(Player winner)
         {
-            Status = GameStatus.Stopped;
+            EndTime = DateTime.Now;
+            TimeSpan ts = EndTime.Subtract(StartTime);
             Console.WriteLine("Game end");
-            Console.WriteLine($"Winner is {Winner.Id}");
-            Reset();
+            Console.WriteLine($"Winner is Player {winner.Number}");
+            Console.WriteLine($"Game took {ts} seconds");
         }
 
         public void Reset()
@@ -117,51 +115,76 @@ namespace Uno
                 }
                 if (next < 1) next = next + players;
             }
+            Console.WriteLine($"Next player is player {next}");
             return Players.Where(x => x.Number == next).FirstOrDefault();
         }
 
         public void ExecuteRound(Player player, int round)
         {
+            Console.WriteLine("");
+            Console.WriteLine("************************************");
             Console.WriteLine($"Starting Round {round}");
+            Console.WriteLine("************************************");
+            Console.WriteLine("");
             if (player.Hand.Count == 0)
             {
-                Winner = player;
-                End();
+                End(player);
             }
             else
             {
-                var card = PlayCard(player);
-                Discard.Enqueue(card);
-                if (card.IsReverseCard)
+                player = TakeTurn(player);
+                if (player.Hand.Count() == 0)
                 {
-                    GoForward = !GoForward;
-                    player = GetNextPlayer(player.Number);
+                    End(player);
                 }
-                else if (card.IsSkipCard)
+                else
                 {
-                    player = GetNextPlayer(player.Number, true);
-                }
-                else if (card.IsDrawTwoCard)
-                {
-                    player = GetNextPlayer(player.Number);
-                    player = DrawCard(player, 2);
-                }
-                else if (card.IsWildCard)
-                {
-                    player = GetNextPlayer(player.Number);
-                }
-                else if (card.IsWildDrawFourCard)
-                {
-                    player = GetNextPlayer(player.Number);
-                    player = DrawCard(player, 4);
-                }
-                if (player.Number == Players.Count)
-                {
+                    while (player.Number > 1)
+                    {
+                        player = TakeTurn(player);
+                    }
                     Console.WriteLine($"Round {Round} End");
                     round++;
                     ExecuteRound(player, round);
                 }
             }
+        }
+
+        private Player TakeTurn(Player player)
+        {
+            var card = PlayCard(player);
+            Console.WriteLine($"Player {player.Number} has {player.Hand.Count()} cards remaining.");
+            Player nextPlayer = null;
+            if (card.IsReverseCard)
+            {
+                GoForward = !GoForward;
+                nextPlayer = GetNextPlayer(player.Number);
+            }
+            else if (card.IsSkipCard)
+            {
+                nextPlayer = GetNextPlayer(player.Number, true);
+            }
+            else if (card.IsDrawTwoCard)
+            {
+                player = GetNextPlayer(player.Number);
+                player = DrawCard(player, 2);
+                nextPlayer = player;
+            }
+            else if (card.IsWildCard)
+            {
+                nextPlayer = GetNextPlayer(player.Number);
+            }
+            else if (card.IsWildDrawFourCard)
+            {
+                player = GetNextPlayer(player.Number);
+                player = DrawCard(player, 4);
+                nextPlayer = player;
+            }
+            else
+            {
+                nextPlayer = GetNextPlayer(player.Number);
+            }
+            return nextPlayer;
         }
 
         private Player DrawCard(Player player, int cards)
@@ -178,17 +201,7 @@ namespace Uno
             var colorCard = player.Hand.Where(x => x.Color == FaceCard.Color).FirstOrDefault();
             if (colorCard != null)
             {
-                Discard.Enqueue(colorCard);
-                player.Hand.Remove(colorCard);
-
-                Console.Write($"Player {player.Number} matched ");
-                colorCard.DisplayCard();
-                Console.Write($" with Face Card ");
-                FaceCard.DisplayCard();
-                Console.WriteLine();
-                FaceCard = colorCard;
-
-                Console.WriteLine();
+                Console.WriteLine($"Player {player.Number} matched COLOR {colorCard.DisplayCard()} with FaceCard {FaceCard.DisplayCard()}");
                 return colorCard;
             }
             else
@@ -197,21 +210,19 @@ namespace Uno
             }
         }
 
+        private void SetFaceCard(Card card)
+        {
+            FaceCard = card;
+            Console.WriteLine($"FaceCard is {FaceCard.DisplayCard()}");
+            Discard.Enqueue(card);
+        }
+
         private Card MatchOnNumber(Player player)
         {
             var numberCard = player.Hand.Where(x => x.Number > 0).FirstOrDefault();
             if (numberCard != null)
             {
-                Discard.Enqueue(numberCard);
-                player.Hand.Remove(numberCard);
-
-                Console.Write($"Player {player.Number} matched ");
-                numberCard.DisplayCard();
-                Console.Write($" with Face Card ");
-                FaceCard.DisplayCard();
-                Console.WriteLine();
-                FaceCard = numberCard;
-                Console.WriteLine();
+                Console.WriteLine($"Player {player.Number} matched NUMBER {numberCard.DisplayCard()} with FaceCard {FaceCard.DisplayCard()} ");
                 return numberCard;
             }
             return numberCard;
@@ -277,6 +288,11 @@ namespace Uno
             if (card == null)
             {
                 DrawCard(player, 1);
+            }
+            else
+            {
+                SetFaceCard(card);
+                player.Hand.Remove(card);
             }
 
             return card;
