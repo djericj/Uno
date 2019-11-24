@@ -62,7 +62,7 @@ namespace Uno
             GoForward = true;
             Discard = new Queue<Card>();
             Deal();
-            SetFaceCard(GameDeck.Dequeue());
+            SetFaceCard(Dequeue());
             Round = 1;
             while (!Ended)
                 ExecuteRound(Round);
@@ -75,7 +75,7 @@ namespace Uno
                 foreach (var player in PlayerRotation.Players)
                 {
                     Console.WriteLine($"Dealt card #{i} to Player {player.Number}");
-                    player.Hand.Add(GameDeck.Dequeue());
+                    player.Hand.Add(Dequeue());
                 }
             }
         }
@@ -212,11 +212,35 @@ namespace Uno
         {
             for (var i = 1; i <= cards; i++)
             {
-                player.Hand.Add(GameDeck.Dequeue());
+                player.Hand.Add(Dequeue());
             }
             Console.WriteLine($"Player {player.Number} draws {cards} cards.");
             Console.WriteLine($"Player {player.Number} has {player.Hand.Count()} cards remaining.");
             return player;
+        }
+
+        private Card Dequeue()
+        {
+            if (GameDeck.Count == 0)
+            {
+                ReloadFromDiscard();
+            }
+            return GameDeck.Dequeue();
+        }
+
+        private void ReloadFromDiscard()
+        {
+            Object obj = new Object();
+            lock (obj)
+            {
+                Card[] discardCards = new Card[Discard.Count()];
+                Discard.CopyTo(discardCards, 0);
+                foreach (var card in discardCards)
+                {
+                    GameDeck.Enqueue(card);
+                }
+                Discard.Clear();
+            }
         }
 
         private void SetFaceCard(Card card)
@@ -242,7 +266,7 @@ namespace Uno
 
         private Card MatchOnNumber(Player player)
         {
-            var numberCard = player.Hand.Where(x => x.Number == FaceCard.Number).FirstOrDefault();
+            var numberCard = player.Hand.Where(x => !x.IsSpecialCard && x.Number == FaceCard.Number).FirstOrDefault();
             if (numberCard != null)
             {
                 Console.WriteLine($"Player {player.Number} matched NUMBER {numberCard.DisplayCard()} with FaceCard {FaceCard.DisplayCard()} ");

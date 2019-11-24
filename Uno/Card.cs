@@ -20,6 +20,8 @@ namespace Uno
 
         public CardStatus Status { get; set; }
 
+        public bool IsSpecialCard { get; set; }
+
         public bool IsSkipCard { get; set; }
 
         public bool IsReverseCard { get; set; }
