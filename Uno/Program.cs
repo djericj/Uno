@@ -16,7 +16,7 @@ namespace Uno
             players.Add(CreatePlayer(2));
             players.Add(CreatePlayer(3));
 
-            var result = new Game(players).NewGame();
+            new Game(players).NewGame();
         }
 
         private static Player CreatePlayer(int index)

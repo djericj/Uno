@@ -16,4 +16,9 @@ namespace Uno
         public int Number { get; set; }
         public List<Card> Hand { get; set; }
     }
+
+    public class PlayerRotation
+    {
+        public LinkedList<Player> Players { get; set; }
+    }
 }
