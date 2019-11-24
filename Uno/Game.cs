@@ -63,9 +63,9 @@ namespace Uno
             Discard = new Queue<Card>();
             Deal();
             SetFaceCard(Dequeue());
-            Round = 1;
+            //Round = 1;
             while (!Ended)
-                ExecuteRound(Round);
+                ExecuteRound(1);
         }
 
         public void Deal()
@@ -80,7 +80,7 @@ namespace Uno
             }
         }
 
-        public void End(Player winner)
+        public void End(Player winner, int round)
         {
             EndTime = DateTime.Now;
             TimeSpan ts = EndTime.Subtract(StartTime);
@@ -96,6 +96,7 @@ namespace Uno
                 Console.WriteLine($"Player {player.Number} ended with {player.Hand.Count()} cards remaining");
             }
 
+            Console.WriteLine($"Total Rounds: {round}");
             Console.WriteLine($"Game took {ts} seconds");
             PlayerRotation = null;
             return;
@@ -150,7 +151,7 @@ namespace Uno
                 }
                 if (HasWon(p))
                 {
-                    End(p);
+                    End(p, round);
                     Ended = true;
                     break;
                 }
