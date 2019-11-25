@@ -13,8 +13,17 @@ namespace Uno
         }
 
         public Guid Id { get; }
+        public string Name { get; set; }
         public int Number { get; set; }
         public List<Card> Hand { get; set; }
+
+        public int CardsRemaining
+        {
+            get
+            {
+                return Hand != null ? Hand.Count : 0;
+            }
+        }
     }
 
     public class PlayerRotation

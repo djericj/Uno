@@ -31,11 +31,16 @@ namespace Uno
         public bool IsWildCard { get; set; }
 
         public bool IsWildDrawFourCard { get; set; }
+
+        public string Print()
+        {
+            return "";
+        }
     }
 
     public static class CardExtensions
     {
-        private static string SetColor(Card card)
+        public static string SetColor(Card card)
         {
             if (card.Color == "Red") return "Red".BrightRed().Reversed();
             if (card.Color == "Yellow") return "Yellow".Yellow().Reversed();
@@ -71,6 +76,45 @@ namespace Uno
                 return $"{SetColor(card)} Wild Card Draw Four";
             }
             return "";
+        }
+
+        public static string FormatHand(List<Card> cards)
+        {
+            if (cards == null) return "";
+            var sb = new StringBuilder();
+            foreach (var card in cards)
+            {
+                sb.Append(FormatCard(card) + ";");
+            }
+            return sb.ToString();
+        }
+
+        public static string FormatCard(Card card)
+        {
+            if (card.IsDrawTwoCard)
+            {
+                return "D" + card.Color.Substring(0, 1);
+            }
+            else if (card.IsReverseCard)
+            {
+                return "R" + card.Color.Substring(0, 1);
+            }
+            else if (card.IsSkipCard)
+            {
+                return "S" + card.Color.Substring(0, 1);
+            }
+            else if (card.IsWildCard)
+            {
+                return "W" + card.Color.Substring(0, 1);
+            }
+            else if (card.IsWildDrawFourCard)
+            {
+                return "X" + card.Color.Substring(0, 1);
+            }
+            else
+            {
+                return card.Number + card.Color.Substring(0, 1);
+            }
         }
     }
 

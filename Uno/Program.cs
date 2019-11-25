@@ -16,18 +16,23 @@ namespace Uno
         private static void Main(string[] args)
         {
             //Usage();
-
+            Random r = new Random();
+            var totalPlayers = r.Next(3, 10);
             var players = new List<Player>();
-            players.Add(CreatePlayer(1));
-            players.Add(CreatePlayer(2));
-            players.Add(CreatePlayer(3));
+            for (var i = 1; i <= totalPlayers; i++)
+            {
+                players.Add(CreatePlayer(i));
+            }
+            //players.Add(CreatePlayer(1));
+            //players.Add(CreatePlayer(2));
+            //players.Add(CreatePlayer(3));
 
             new Game(players).NewGame();
         }
 
         private static Player CreatePlayer(int index)
         {
-            var player = new Player(index);
+            var player = new Player(index) { Name = "Player " + index };
             Console.WriteLine($"Player {player.Number} {player.Id}");
             return player;
         }
