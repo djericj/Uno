@@ -217,8 +217,11 @@ namespace Uno
                 if (!Ended)
                     player.Hand.Add(Dequeue());
             }
-            Log("TURN", player, round, $"Player {player.Number} draws {cards} cards.");
-            Log("TURN", player, round, $"Player {player.Number} has {player.CardsRemaining} cards remaining.");
+            if (!Ended)
+            {
+                Log("TURN", player, round, $"Player {player.Number} draws {cards} cards.");
+                Log("TURN", player, round, $"Player {player.Number} has {player.CardsRemaining} cards remaining.");
+            }
             return player;
         }
 
@@ -258,6 +261,10 @@ namespace Uno
         private void SetFaceCard(Card card)
         {
             FaceCard = card;
+            if (card.IsWildCard || card.IsWildDrawFourCard)
+            {
+                card.Color = GetRandomColor();
+            }
             Log("INFO", $"FaceCard is {FaceCard.DisplayCard()}");
             Discard.Enqueue(card);
         }
