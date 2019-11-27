@@ -1,47 +1,63 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 using Crayon;
 
 namespace Uno
 {
+    /// <summary>
+    /// This class contains all the game logic.
+    /// </summary>
     public class Game
     {
         public Game(List<Player> players)
         {
             PlayerRotation = new PlayerRotation();
             PlayerRotation.Players = new LinkedList<Player>(players);
-            GameLog = new List<TurnLog>();
+            GameLog = new List<GameTurn>();
         }
 
+        public event Action GameStarted;
+
+        public event Action<Game> GameFinished;
+
+        public event Action<GameTurn> GameTurnCompleted;
+
         public Guid GameId { get; set; }
+        private DateTime StartTime { get; set; }
+        private DateTime EndTime { get; set; }
+        private static PlayerRotation PlayerRotation { get; set; }
+        private static Queue<Card> GameDeck { get; set; }
+        private static Queue<Card> Discard { get; set; }
+        private static Card FaceCard { get; set; }
+        private bool SkipNextPlayer { get; set; }
+        private bool DrawTwoCards { get; set; }
+        private bool DrawFourCards { get; set; }
+        private bool Ended { get; set; }
 
-        public DateTime StartTime { get; set; }
+        public List<GameTurn> GameLog { get; set; }
+        public bool DoubleDeck { get; set; }
 
-        public DateTime EndTime { get; set; }
+        private void OnGameTurnCompleted<GameTurn>(Uno.GameTurn gameTurn)
+        {
+            Action<Uno.GameTurn> handler = GameTurnCompleted;
+            handler?.Invoke(gameTurn);
+        }
 
-        public static PlayerRotation PlayerRotation { get; set; }
+        private void OnGameStarted()
+        {
+            Action handler = GameStarted;
+            handler?.Invoke();
+        }
 
-        public static Queue<Card> GameDeck { get; set; }
-
-        public static Queue<Card> Discard { get; set; }
-
-        public static Card FaceCard { get; set; }
-
-        public bool GoForward { get; set; }
-
-        public bool SkipNextPlayer { get; set; }
-
-        public bool DrawTwoCards { get; set; }
-
-        public bool DrawFourCards { get; set; }
-
-        public bool Ended { get; set; }
-
-        public static int Round { get; set; }
-
-        public List<TurnLog> GameLog { get; set; }
+        private void OnGameFinished(Game game)
+        {
+            Action<Game> handler = GameFinished;
+            handler?.Invoke(game);
+        }
 
         public List<Card> Shuffle(List<Card> cards)
         {
@@ -62,10 +78,10 @@ namespace Uno
 
         public void Start()
         {
-            GameLog = new List<TurnLog>();
+            OnGameStarted();
+            GameLog = new List<GameTurn>();
             StartTime = DateTime.Now;
             Log("START", $"Game start, {PlayerRotation.Players.Count()} players, ID: " + GameId.ToString());
-            GoForward = true;
             Discard = new Queue<Card>();
             Deal();
             SetFaceCard(Dequeue());
@@ -104,6 +120,7 @@ namespace Uno
 
             Log("END", $"Game ID {GameId.ToString()}");
             PlayerRotation = null;
+            OnGameFinished(this);
             return;
         }
 
@@ -366,13 +383,15 @@ namespace Uno
         public void NewGame()
         {
             GameId = Guid.NewGuid();
-            GameDeck = new Queue<Card>(Shuffle(Deck.BuildDeck()));
+            var deck = Deck.BuildDeck();
+            if (DoubleDeck) deck.AddRange(Deck.BuildDeck());
+            GameDeck = new Queue<Card>(Shuffle(deck));
             Start();
         }
 
         private void Log(string stage, string action)
         {
-            var log = new TurnLog()
+            var log = new GameTurn()
             {
                 Stage = stage,
                 Player = null,
@@ -385,12 +404,12 @@ namespace Uno
                 FaceCard = null
             };
             GameLog.Add(log);
-            Console.WriteLine(log.Print());
+            OnGameTurnCompleted<GameTurn>(log);
         }
 
         private void Log(string stage, Player player, int round, string action)
         {
-            var log = new TurnLog()
+            var log = new GameTurn()
             {
                 Stage = stage,
                 Player = player,
@@ -402,7 +421,7 @@ namespace Uno
                 FaceCard = FaceCard
             };
             GameLog.Add(log);
-            Console.WriteLine(log.Print());
+            OnGameTurnCompleted<GameTurn>(log);
         }
     }
 }

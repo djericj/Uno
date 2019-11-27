@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Uno
 {
-    public class TurnLog
+    public class GameTurn
     {
         // SETUP
         // DEAL
@@ -29,15 +29,15 @@ namespace Uno
 
     public static class TurnLogExtensions
     {
-        public static string Print(this TurnLog log)
+        public static string Print(this GameTurn turn)
         {
-            if (log.Round < 0)
+            if (turn.Round < 0)
             {
-                return $@"{log.Stage}: {log.Action}";
+                return $@"{turn.Stage}: {turn.Action}";
             }
             else
             {
-                return log != null ? $@"{log.Stage}: {log.Player?.Name}, Round {log.Round}, FC: {CardExtensions.FormatCard(log.FaceCard)}, {log.Action}, Hand: {CardExtensions.FormatHand(log.Player?.Hand)}" : "";
+                return turn != null ? $@"{turn.Stage}: {turn.Player?.Name}, Round {turn.Round}, FC: {CardExtensions.FormatCard(turn.FaceCard)}, {turn.Action}, Hand: {CardExtensions.FormatHand(turn.Player?.Hand)}" : "";
             }
         }
     }
